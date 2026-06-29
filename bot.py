@@ -162,8 +162,8 @@ async def delete_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await delete_file(context.args[0])
     await update.message.reply_text("✅ মুছে ফেলা হয়েছে।")
 
-def main():
-    init_db_sync = asyncio.get_event_loop().run_until_complete(init_db())
+async def main():
+    await init_db()
     app = Application.builder().token(BOT_TOKEN).build()
     conv = ConversationHandler(
         entry_points=[MessageHandler(filters.Document.ALL | filters.PHOTO | filters.VIDEO | filters.AUDIO, receive_file)],
@@ -182,4 +182,4 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
