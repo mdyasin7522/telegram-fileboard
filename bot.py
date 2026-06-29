@@ -179,7 +179,7 @@ async def main():
     app.add_handler(CommandHandler("delete", delete_cmd))
     app.add_handler(conv)
     print("✅ Bot চালু!")
-    app.run_polling()
+    await app.run_polling()
 
 if __name__ == "__main__":
     asyncio.run(main())
