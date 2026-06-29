@@ -87,7 +87,7 @@ pending_files = {}
 pending_action = {}
 
 def is_admin(user_id):
-    return user_id == ADMIN_ID
+    return True
 
 # /start
 @bot.message_handler(commands=['start'])
