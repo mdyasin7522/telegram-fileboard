@@ -164,12 +164,7 @@ async def delete_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def main():
     await init_db()
-    app = (
-        Application.builder()
-        .token(BOT_TOKEN)
-        .updater(None)
-        .build()
-    )
+    app = Application.builder().token(BOT_TOKEN).build()
     conv = ConversationHandler(
         entry_points=[MessageHandler(filters.Document.ALL | filters.PHOTO | filters.VIDEO | filters.AUDIO, receive_file)],
         states={
@@ -184,10 +179,7 @@ async def main():
     app.add_handler(CommandHandler("delete", delete_cmd))
     app.add_handler(conv)
     print("✅ Bot চালু!")
-    async with app:
-        await app.start()
-        await app.updater.start_polling()
-        await asyncio.sleep(float("inf"))
+    await app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     asyncio.run(main())
