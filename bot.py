@@ -546,76 +546,79 @@ def userinfo_cmd(message):
     user_id = message.from_user.id
     if not is_owner(user_id):
         return
-    parts = message.text.split()
-    if len(parts) < 2:
-        bot.reply_to(message, "Usage: /userinfo <user_id>")
-        return
-    target_id = int(parts[1])
-    user_row, uploads, downloads = get_user_activity(target_id)
-    lang = get_user_lang(user_id) or "bn"
-
-    if not user_row:
-        bot.reply_to(message, "❌ User খুঁজে পাওয়া যায়নি।" if lang == "bn" else "❌ User not found.")
-        return
-
-    status = "🚫 Blocked" if user_row[2] == 1 else "✅ Active"
-    phone = "-"
     try:
-        chat = bot.get_chat(target_id)
-        if hasattr(chat, "phone_number") and chat.phone_number:
-            phone = chat.phone_number
-    except Exception:
-        pass
-    if lang == "bn":
-        text = (
-            f"🔍 *User তথ্য:*\n\n"
-            f"🧑 নাম: {user_row[6] or '-'}\n"
-            f"👤 Username: @{user_row[1] or 'no_username'}\n"
-            f"🆔 User ID: {user_row[0]}\n"
-            f"📞 ফোন: {phone}\n"
-            f"📌 Status: {status}\n"
-            f"🌐 ভাষা: {user_row[5]}\n"
-            f"📅 প্রথম এসেছে: {user_row[3][:16] if user_row[3] else '-'}\n"
-            f"🕐 শেষ active: {user_row[4][:16] if user_row[4] else '-'}\n\n"
-            f"📤 *Upload করেছে ({len(uploads)}টি):*\n"
-        )
-        if uploads:
-            for up in uploads[:10]:
-                text += f"  📁 {up[1]} | ⬇️{up[3]} বার | {up[2][:16]}\n"
-        else:
-            text += "  কিছু upload করেনি।\n"
-        text += f"\n📥 *Download করেছে ({len(downloads)}টি):*\n"
-        if downloads:
-            for dl in downloads[:10]:
-                text += f"  🔑 {dl[0]} | {dl[1][:16]}\n"
-        else:
-            text += "  কিছু download করেনি।\n"
-    else:
-        text = (
-            f"🔍 *User Info:*\n\n"
-            f"🧑 Name: {user_row[6] or '-'}\n"
-            f"👤 Username: @{user_row[1] or 'no_username'}\n"
-            f"🆔 User ID: {user_row[0]}\n"
-            f"📞 Phone: {phone}\n"
-            f"📌 Status: {status}\n"
-            f"🌐 Language: {user_row[5]}\n"
-            f"📅 First seen: {user_row[3][:16] if user_row[3] else '-'}\n"
-            f"🕐 Last active: {user_row[4][:16] if user_row[4] else '-'}\n\n"
-            f"📤 *Uploads ({len(uploads)}):*\n"
-        )
-        if uploads:
-            for up in uploads[:10]:
-                text += f"  📁 {up[1]} | ⬇️{up[3]}x | {up[2][:16]}\n"
-        else:
-            text += "  No uploads.\n"
-        text += f"\n📥 *Downloads ({len(downloads)}):*\n"
-        if downloads:
-            for dl in downloads[:10]:
-                text += f"  🔑 {dl[0]} | {dl[1][:16]}\n"
-        else:
-            text += "  No downloads.\n"
+        parts = message.text.split()
+        if len(parts) < 2:
+            bot.reply_to(message, "Usage: /userinfo <user_id>")
+            return
+        target_id = int(parts[1])
+        user_row, uploads, downloads = get_user_activity(target_id)
+        lang = get_user_lang(user_id) or "bn"
 
-    bot.reply_to(message, text, parse_mode="Markdown")
+        if not user_row:
+            bot.reply_to(message, "❌ User খুঁজে পাওয়া যায়নি।" if lang == "bn" else "❌ User not found.")
+            return
+
+        status = "🚫 Blocked" if user_row[2] == 1 else "✅ Active"
+        phone = "-"
+        try:
+            chat = bot.get_chat(target_id)
+            if hasattr(chat, "phone_number") and chat.phone_number:
+                phone = chat.phone_number
+        except Exception:
+            pass
+        if lang == "bn":
+            text = (
+                f"🔍 User তথ্য:\n\n"
+                f"🧑 নাম: {user_row[6] or '-'}\n"
+                f"👤 Username: @{user_row[1] or 'no_username'}\n"
+                f"🆔 User ID: {user_row[0]}\n"
+                f"📞 ফোন: {phone}\n"
+                f"📌 Status: {status}\n"
+                f"🌐 ভাষা: {user_row[5]}\n"
+                f"📅 প্রথম এসেছে: {user_row[3][:16] if user_row[3] else '-'}\n"
+                f"🕐 শেষ active: {user_row[4][:16] if user_row[4] else '-'}\n\n"
+                f"📤 Upload করেছে ({len(uploads)}টি):\n"
+            )
+            if uploads:
+                for up in uploads[:10]:
+                    text += f"  📁 {up[1]} | ⬇️{up[3]} বার | {up[2][:16]}\n"
+            else:
+                text += "  কিছু upload করেনি।\n"
+            text += f"\n📥 Download করেছে ({len(downloads)}টি):\n"
+            if downloads:
+                for dl in downloads[:10]:
+                    text += f"  🔑 {dl[0]} | {dl[1][:16]}\n"
+            else:
+                text += "  কিছু download করেনি।\n"
+        else:
+            text = (
+                f"🔍 User Info:\n\n"
+                f"🧑 Name: {user_row[6] or '-'}\n"
+                f"👤 Username: @{user_row[1] or 'no_username'}\n"
+                f"🆔 User ID: {user_row[0]}\n"
+                f"📞 Phone: {phone}\n"
+                f"📌 Status: {status}\n"
+                f"🌐 Language: {user_row[5]}\n"
+                f"📅 First seen: {user_row[3][:16] if user_row[3] else '-'}\n"
+                f"🕐 Last active: {user_row[4][:16] if user_row[4] else '-'}\n\n"
+                f"📤 Uploads ({len(uploads)}):\n"
+            )
+            if uploads:
+                for up in uploads[:10]:
+                    text += f"  📁 {up[1]} | ⬇️{up[3]}x | {up[2][:16]}\n"
+            else:
+                text += "  No uploads.\n"
+            text += f"\n📥 Downloads ({len(downloads)}):\n"
+            if downloads:
+                for dl in downloads[:10]:
+                    text += f"  🔑 {dl[0]} | {dl[1][:16]}\n"
+            else:
+                text += "  No downloads.\n"
+
+        bot.reply_to(message, text)
+    except Exception as e:
+        bot.reply_to(message, f"❌ Error: {str(e)}")
 
 # ─── /delete ───
 @bot.message_handler(commands=['delete'])
