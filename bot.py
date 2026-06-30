@@ -135,6 +135,7 @@ def init_db():
             user_id INTEGER PRIMARY KEY,
             language TEXT DEFAULT 'en',
             username TEXT,
+            first_name TEXT,
             blocked INTEGER DEFAULT 0,
             first_seen TEXT,
             last_seen TEXT
@@ -165,15 +166,15 @@ def set_user_lang(user_id, lang):
     conn.commit()
     conn.close()
 
-def save_username(user_id, username):
+def save_username(user_id, username, first_name=None):
     now = datetime.now().isoformat()
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
     exists = cursor.fetchone()
     if exists:
-        conn.execute("UPDATE users SET username = ?, last_seen = ? WHERE user_id = ?", (username, now, user_id))
+        conn.execute("UPDATE users SET username = ?, first_name = ?, last_seen = ? WHERE user_id = ?", (username, first_name, now, user_id))
     else:
-        conn.execute("INSERT INTO users (user_id, username, first_seen, last_seen) VALUES (?, ?, ?, ?)", (user_id, username, now, now))
+        conn.execute("INSERT INTO users (user_id, username, first_name, first_seen, last_seen) VALUES (?, ?, ?, ?, ?)", (user_id, username, first_name, now, now))
     conn.commit()
     conn.close()
 
@@ -251,7 +252,7 @@ def list_files():
 
 def get_all_users():
     conn = sqlite3.connect(DB_NAME)
-    cursor = conn.execute("SELECT user_id, username, blocked, first_seen, last_seen FROM users ORDER BY last_seen DESC")
+    cursor = conn.execute("SELECT user_id, username, blocked, first_seen, last_seen, first_name FROM users ORDER BY last_seen DESC")
     rows = cursor.fetchall()
     conn.close()
     return rows
@@ -276,7 +277,7 @@ def get_stats():
 
 def get_user_activity(user_id):
     conn = sqlite3.connect(DB_NAME)
-    user_row = conn.execute("SELECT user_id, username, blocked, first_seen, last_seen, language FROM users WHERE user_id = ?", (user_id,)).fetchone()
+    user_row = conn.execute("SELECT user_id, username, blocked, first_seen, last_seen, language, first_name FROM users WHERE user_id = ?", (user_id,)).fetchone()
     uploads = conn.execute("SELECT id, file_name, created_at, download_count FROM files WHERE uploader_id = ? ORDER BY created_at DESC", (user_id,)).fetchall()
     downloads = conn.execute("SELECT file_uid, downloaded_at FROM downloads WHERE downloader_id = ? ORDER BY downloaded_at DESC", (user_id,)).fetchall()
     conn.close()
@@ -311,7 +312,8 @@ def time_unit_keyboard(user_id):
 def start(message):
     user_id = message.from_user.id
     username = message.from_user.username or "no_username"
-    save_username(user_id, username)
+    first_name = message.from_user.first_name or ""
+    save_username(user_id, username, first_name)
 
     if is_blocked(user_id):
         bot.reply_to(message, t(user_id, "blocked"))
@@ -435,7 +437,35 @@ def users_cmd(message):
     for u in users:
         status = "🚫 Blocked" if u[2] == 1 else "✅ Active"
         last_seen = u[4][:16] if u[4] else "-"
-        text += f"👤 @{u[1] or 'no_username'} (ID: {u[0]})\n{status} | Last seen: {last_seen}\n\n"
+        joined = u[3][:16] if u[3] else "-"
+        name = u[5] or ""
+        phone = "-"
+        try:
+            chat = bot.get_chat(u[0])
+            if hasattr(chat, "phone_number") and chat.phone_number:
+                phone = chat.phone_number
+        except Exception:
+            pass
+        if lang == "bn":
+            text += (
+                f"🧑 নাম: {name}\n"
+                f"👤 Username: @{u[1] or 'no_username'}\n"
+                f"🆔 ID: {u[0]}\n"
+                f"📞 ফোন: {phone}\n"
+                f"📌 {status}\n"
+                f"📅 যোগ দিয়েছে: {joined}\n"
+                f"🕐 শেষ active: {last_seen}\n\n"
+            )
+        else:
+            text += (
+                f"🧑 Name: {name}\n"
+                f"👤 Username: @{u[1] or 'no_username'}\n"
+                f"🆔 ID: {u[0]}\n"
+                f"📞 Phone: {phone}\n"
+                f"📌 {status}\n"
+                f"📅 Joined: {joined}\n"
+                f"🕐 Last seen: {last_seen}\n\n"
+            )
     if len(text) > 4000:
         for i in range(0, len(text), 4000):
             bot.send_message(message.chat.id, text[i:i+4000])
@@ -489,11 +519,20 @@ def userinfo_cmd(message):
         return
 
     status = "🚫 Blocked" if user_row[2] == 1 else "✅ Active"
+    phone = "-"
+    try:
+        chat = bot.get_chat(target_id)
+        if hasattr(chat, "phone_number") and chat.phone_number:
+            phone = chat.phone_number
+    except Exception:
+        pass
     if lang == "bn":
         text = (
             f"🔍 *User তথ্য:*\n\n"
+            f"🧑 নাম: {user_row[6] or '-'}\n"
             f"👤 Username: @{user_row[1] or 'no_username'}\n"
             f"🆔 User ID: {user_row[0]}\n"
+            f"📞 ফোন: {phone}\n"
             f"📌 Status: {status}\n"
             f"🌐 ভাষা: {user_row[5]}\n"
             f"📅 প্রথম এসেছে: {user_row[3][:16] if user_row[3] else '-'}\n"
@@ -514,8 +553,10 @@ def userinfo_cmd(message):
     else:
         text = (
             f"🔍 *User Info:*\n\n"
+            f"🧑 Name: {user_row[6] or '-'}\n"
             f"👤 Username: @{user_row[1] or 'no_username'}\n"
             f"🆔 User ID: {user_row[0]}\n"
+            f"📞 Phone: {phone}\n"
             f"📌 Status: {status}\n"
             f"🌐 Language: {user_row[5]}\n"
             f"📅 First seen: {user_row[3][:16] if user_row[3] else '-'}\n"
@@ -603,7 +644,8 @@ def uploader_cmd(message):
 def receive_file(message):
     user_id = message.from_user.id
     username = message.from_user.username or "no_username"
-    save_username(user_id, username)
+    first_name = message.from_user.first_name or ""
+    save_username(user_id, username, first_name)
 
     if is_blocked(user_id):
         bot.reply_to(message, t(user_id, "blocked"))
