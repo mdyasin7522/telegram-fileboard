@@ -23,7 +23,7 @@ TEXT = {
     "bn": {
         "choose_lang": "🌐 আপনার ভাষা সিলেক্ট করুন:",
         "lang_set": "✅ ভাষা বাংলা সেট করা হয়েছে!",
-        "welcome_admin": "👋 স্বাগতম Admin!\n\n📁 ফাইল পাঠান — link বানিয়ে দেব।\n\n📋 /list — সব ফাইল\n👥 /users — সব user দেখুন\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User এর সব activity\n❌ /delete <id> — ফাইল মুছুন\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — কে আপলোড করেছে\n🌐 /language — ভাষা পরিবর্তন\n❓ /help — সব command এর তালিকা",
+        "welcome_admin": "👋 স্বাগতম Admin!\n\n📁 ফাইল পাঠান — link বানিয়ে দেব।\n\n📋 /list — সব ফাইল\n👥 /users — সব user দেখুন\n🟢 /active — ২৪ ঘণ্টায় active user\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User এর সব activity\n❌ /delete <id> — ফাইল মুছুন\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — কে আপলোড করেছে\n🌐 /language — ভাষা পরিবর্তন\n❓ /help — সব command এর তালিকা",
         "welcome_user": "📁 এই bot থেকে ফাইল ডাউনলোড করুন।\n🌐 /language — ভাষা পরিবর্তন করুন",
         "ask_limit": "📌 এই ফাইলে কী ধরনের limit দিতে চান?",
         "btn_download_limit": "⬇️ Download limit দিন",
@@ -66,7 +66,7 @@ TEXT = {
     "en": {
         "choose_lang": "🌐 Choose your language:",
         "lang_set": "✅ Language set to English!",
-        "welcome_admin": "👋 Welcome Admin!\n\n📁 Send a file — I'll create a link.\n\n📋 /list — All files\n👥 /users — All users\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User's full activity\n❌ /delete <id> — Delete file\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — See uploader\n🌐 /language — Change language\n❓ /help — Full command list",
+        "welcome_admin": "👋 Welcome Admin!\n\n📁 Send a file — I'll create a link.\n\n📋 /list — All files\n👥 /users — All users\n🟢 /active — Active users (24h)\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User's full activity\n❌ /delete <id> — Delete file\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — See uploader\n🌐 /language — Change language\n❓ /help — Full command list",
         "welcome_user": "📁 Download files from this bot.\n🌐 /language — Change language",
         "ask_limit": "📌 What kind of limit do you want for this file?",
         "btn_download_limit": "⬇️ Download Limit",
@@ -250,9 +250,13 @@ def list_files():
     conn.close()
     return rows
 
-def get_all_users():
+def get_all_users(online_only=False):
     conn = sqlite3.connect(DB_NAME)
-    cursor = conn.execute("SELECT user_id, username, blocked, first_seen, last_seen, first_name FROM users ORDER BY last_seen DESC")
+    if online_only:
+        cutoff = (datetime.now() - timedelta(hours=24)).isoformat()
+        cursor = conn.execute("SELECT user_id, username, blocked, first_seen, last_seen, first_name FROM users WHERE last_seen > ? ORDER BY last_seen DESC", (cutoff,))
+    else:
+        cursor = conn.execute("SELECT user_id, username, blocked, first_seen, last_seen, first_name FROM users ORDER BY last_seen DESC")
     rows = cursor.fetchall()
     conn.close()
     return rows
@@ -351,6 +355,7 @@ def help_cmd(message):
             "📖 *সকল Admin Command:*\n\n"
             "📋 /list — সব আপলোড করা ফাইলের তালিকা (কে আপলোড করেছে, কতবার ডাউনলোড হয়েছে)\n\n"
             "👥 /users — সব user এর তালিকা (কে কবে join করেছে, last active কবে)\n\n"
+            "🟢 /active — গত ২৪ ঘণ্টায় যারা bot ব্যবহার করেছে শুধু তাদের তালিকা\n\n"
             "📊 /stats — মোট user, blocked user, মোট file, মোট download, গত ২৪ ঘণ্টায় active user সংখ্যা\n\n"
             "🔍 /userinfo <user_id> — নির্দিষ্ট user এর সব তথ্য: সে কি কি upload করেছে, কি কি download করেছে, কবে join করেছে\n\n"
             "🔎 /uploader <file_id> — একটা নির্দিষ্ট file কে আপলোড করেছে তা দেখুন\n\n"
@@ -365,6 +370,7 @@ def help_cmd(message):
             "📖 *All Admin Commands:*\n\n"
             "📋 /list — List of all uploaded files (who uploaded, download count)\n\n"
             "👥 /users — List of all users (join date, last active)\n\n"
+            "🟢 /active — Only users active in the last 24 hours\n\n"
             "📊 /stats — Total users, blocked users, total files, total downloads, active users in last 24h\n\n"
             "🔍 /userinfo <user_id> — Full activity of a specific user: uploads, downloads, join date\n\n"
             "🔎 /uploader <file_id> — See who uploaded a specific file\n\n"
@@ -432,10 +438,17 @@ def users_cmd(message):
         bot.reply_to(message, "কোনো user নেই।" if get_user_lang(user_id) == "bn" else "No users found.")
         return
     lang = get_user_lang(user_id) or "bn"
-    title = "👥 সব User:\n\n" if lang == "bn" else "👥 All Users:\n\n"
+    title = "👥 সব User (মোট {n}):\n\n".format(n=len(users)) if lang == "bn" else "👥 All Users (Total {n}):\n\n".format(n=len(users))
     text = title
+    cutoff = datetime.now() - timedelta(hours=24)
     for u in users:
-        status = "🚫 Blocked" if u[2] == 1 else "✅ Active"
+        block_status = "🚫 Blocked" if u[2] == 1 else "✅ Not Blocked"
+        last_seen_dt = None
+        try:
+            last_seen_dt = datetime.fromisoformat(u[4]) if u[4] else None
+        except Exception:
+            pass
+        online_status = "🟢 Online (24h)" if last_seen_dt and last_seen_dt > cutoff else "⚪ Inactive"
         last_seen = u[4][:16] if u[4] else "-"
         joined = u[3][:16] if u[3] else "-"
         name = u[5] or ""
@@ -452,7 +465,7 @@ def users_cmd(message):
                 f"👤 Username: @{u[1] or 'no_username'}\n"
                 f"🆔 ID: {u[0]}\n"
                 f"📞 ফোন: {phone}\n"
-                f"📌 {status}\n"
+                f"📌 {block_status} | {online_status}\n"
                 f"📅 যোগ দিয়েছে: {joined}\n"
                 f"🕐 শেষ active: {last_seen}\n\n"
             )
@@ -462,10 +475,37 @@ def users_cmd(message):
                 f"👤 Username: @{u[1] or 'no_username'}\n"
                 f"🆔 ID: {u[0]}\n"
                 f"📞 Phone: {phone}\n"
-                f"📌 {status}\n"
+                f"📌 {block_status} | {online_status}\n"
                 f"📅 Joined: {joined}\n"
                 f"🕐 Last seen: {last_seen}\n\n"
             )
+    if len(text) > 4000:
+        for i in range(0, len(text), 4000):
+            bot.send_message(message.chat.id, text[i:i+4000])
+    else:
+        bot.reply_to(message, text)
+
+# ─── /active (owner only) - shows only users active in last 24h ───
+@bot.message_handler(commands=['active'])
+def active_cmd(message):
+    user_id = message.from_user.id
+    if not is_owner(user_id):
+        return
+    users = get_all_users(online_only=True)
+    lang = get_user_lang(user_id) or "bn"
+    if not users:
+        bot.reply_to(message, "গত ২৪ ঘণ্টায় কেউ active ছিল না।" if lang == "bn" else "No users active in last 24 hours.")
+        return
+    title = "🟢 Active User (গত ২৪ ঘণ্টা) - মোট {n}:\n\n".format(n=len(users)) if lang == "bn" else "🟢 Active Users (last 24h) - Total {n}:\n\n".format(n=len(users))
+    text = title
+    for u in users:
+        block_status = "🚫 Blocked" if u[2] == 1 else "✅ Not Blocked"
+        last_seen = u[4][:16] if u[4] else "-"
+        name = u[5] or ""
+        if lang == "bn":
+            text += f"🧑 {name} (@{u[1] or 'no_username'})\n🆔 {u[0]} | {block_status}\n🕐 শেষ active: {last_seen}\n\n"
+        else:
+            text += f"🧑 {name} (@{u[1] or 'no_username'})\n🆔 {u[0]} | {block_status}\n🕐 Last seen: {last_seen}\n\n"
     if len(text) > 4000:
         for i in range(0, len(text), 4000):
             bot.send_message(message.chat.id, text[i:i+4000])
