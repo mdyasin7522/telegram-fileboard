@@ -742,12 +742,6 @@ def finalize(message, user_id, max_downloads, expires_at):
     text = f"{t(user_id, 'upload_done')}\n\n📁 {pf['file_name']}\n🔑 {uid}\n\n{limit_text}\n{t(user_id, 'download_link', link=link)}"
     bot.reply_to(message, text)
 
-    if user_id != ADMIN_ID:
-        try:
-            bot.send_message(ADMIN_ID, f"📤 নতুন আপলোড!\n👤 @{username} (ID: {user_id})\n📁 {pf['file_name']}\n🔑 {uid}")
-        except:
-            pass
-
 def send_file(message, uid, user_id_override=None):
     user_id = user_id_override or message.from_user.id
     if is_blocked(user_id):
@@ -757,14 +751,17 @@ def send_file(message, uid, user_id_override=None):
     if not file_data:
         bot.send_message(message.chat.id, t(user_id, "file_not_found"))
         return
-    if file_data["expires_at"] and datetime.now() > datetime.fromisoformat(file_data["expires_at"]):
-        delete_file(uid)
-        bot.send_message(message.chat.id, t(user_id, "file_expired"))
-        return
-    if file_data["max_downloads"] != -1 and file_data["download_count"] >= file_data["max_downloads"]:
-        bot.send_message(message.chat.id, t(user_id, "limit_reached"))
-        return
-    increment_download(uid)
+
+    # Admin/owner bypasses expiry and download limit checks
+    if not is_owner(user_id):
+        if file_data["expires_at"] and datetime.now() > datetime.fromisoformat(file_data["expires_at"]):
+            delete_file(uid)
+            bot.send_message(message.chat.id, t(user_id, "file_expired"))
+            return
+        if file_data["max_downloads"] != -1 and file_data["download_count"] >= file_data["max_downloads"]:
+            bot.send_message(message.chat.id, t(user_id, "limit_reached"))
+            return
+        increment_download(uid)
 
     username = "no_username"
     conn = sqlite3.connect(DB_NAME)
