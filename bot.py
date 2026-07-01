@@ -828,9 +828,10 @@ def finalize(message, user_id, max_downloads, expires_at):
 
     # Share button
     share_text = f"📥 ফাইল ডাউনলোড করুন: {pf['file_name']}" if get_user_lang(user_id) == "bn" else f"📥 Download file: {pf['file_name']}"
+    share_btn = "📤 Share করুন" if get_user_lang(user_id) == "bn" else "📤 Share"
     share_url = f"https://t.me/share/url?url={link}&text={share_text}"
     keyboard = InlineKeyboardMarkup()
-    keyboard.add(InlineKeyboardButton("📤 Share করুন", url=share_url))
+    keyboard.add(InlineKeyboardButton(share_btn, url=share_url))
     bot.reply_to(message, text, reply_markup=keyboard)
 
 def send_file(message, uid, user_id_override=None):
