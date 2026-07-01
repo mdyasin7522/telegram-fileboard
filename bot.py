@@ -825,7 +825,13 @@ def finalize(message, user_id, max_downloads, expires_at):
         limit_text = t(user_id, "limit_none_text")
 
     text = f"{t(user_id, 'upload_done')}\n\n📁 {pf['file_name']}\n🔑 {uid}\n\n{limit_text}\n{t(user_id, 'download_link', link=link)}"
-    bot.reply_to(message, text)
+
+    # Share button
+    share_text = f"📥 ফাইল ডাউনলোড করুন: {pf['file_name']}" if get_user_lang(user_id) == "bn" else f"📥 Download file: {pf['file_name']}"
+    share_url = f"https://t.me/share/url?url={link}&text={share_text}"
+    keyboard = InlineKeyboardMarkup()
+    keyboard.add(InlineKeyboardButton("📤 Share করুন", url=share_url))
+    bot.reply_to(message, text, reply_markup=keyboard)
 
 def send_file(message, uid, user_id_override=None):
     user_id = user_id_override or message.from_user.id
