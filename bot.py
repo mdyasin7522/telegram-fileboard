@@ -21,6 +21,12 @@ MAX_TIME_VALUE_HOUR = 48
 # Bangladesh standard passport photo: 35mm x 45mm @ 300 dpi
 PASSPORT_SIZE = (413, 531)
 
+# /resize constraints
+RESIZE_MIN_KB = 30
+RESIZE_MAX_KB = 2560  # 2.5 MB
+RESIZE_MIN_DIMENSION = 1
+RESIZE_MAX_DIMENSION = 5000
+
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # ─── Translations ───
@@ -28,12 +34,21 @@ TEXT = {
     "bn": {
         "choose_lang": "🌐 আপনার ভাষা সিলেক্ট করুন:",
         "lang_set": "✅ ভাষা বাংলা সেট করা হয়েছে!",
-        "welcome_admin": "👋 স্বাগতম Admin!\n\n📁 ফাইল পাঠান — link বানিয়ে দেব।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n🪪 /passport — ছবি পাসপোর্ট সাইজে বানিয়ে link দেব।\n\n📋 /list — সব ফাইল\n👥 /users — সব user দেখুন\n🟢 /active — ২৪ ঘণ্টায় active user\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User এর সব activity\n❌ /delete <id> — ফাইল মুছুন\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — কে আপলোড করেছে\n🌐 /language — ভাষা পরিবর্তন\n❓ /help — সব command এর তালিকা",
-        "welcome_user": "📁 এই bot থেকে ফাইল ডাউনলোড করুন।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n🪪 /passport — ছবি পাসপোর্ট সাইজে বানিয়ে link দেব।\n🌐 /language — ভাষা পরিবর্তন করুন",
+        "welcome_admin": "👋 স্বাগতম Admin!\n\n📁 ফাইল পাঠান — link বানিয়ে দেব।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n🪪 /passport — ছবি পাসপোর্ট সাইজে বানিয়ে link দেব।\n🖼️ /resize — নিজের মতো height/width/size/format দিয়ে ছবি বানিয়ে link দেব।\n\n📋 /list — সব ফাইল\n👥 /users — সব user দেখুন\n🟢 /active — ২৪ ঘণ্টায় active user\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User এর সব activity\n❌ /delete <id> — ফাইল মুছুন\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — কে আপলোড করেছে\n🌐 /language — ভাষা পরিবর্তন\n❓ /help — সব command এর তালিকা",
+        "welcome_user": "📁 এই bot থেকে ফাইল ডাউনলোড করুন।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n🪪 /passport — ছবি পাসপোর্ট সাইজে বানিয়ে link দেব।\n🖼️ /resize — নিজের মতো height/width/size/format দিয়ে ছবি বানিয়ে link দেব।\n🌐 /language — ভাষা পরিবর্তন করুন",
         "text_usage": "📝 ব্যবহার: /text এর পর আপনার লেখা লিখুন।\nউদাহরণ: /text এখানে আপনার বড় লেখাটি লিখুন...",
         "passport_ask_photo": "🪪 এখন একটা ছবি পাঠান — আমি সেটাকে পাসপোর্ট সাইজে (35mm x 45mm) বানিয়ে দেব।",
         "passport_error": "❌ ছবি process করতে সমস্যা হয়েছে: {error}",
         "passport_low_res": "⚠️ আপনার ছবির resolution কম, তাই বড় করার (upscale) কারণে ছবিটা কিছুটা ঘোলা/blur দেখাতে পারে। ভালো মানের জন্য বেশি resolution এর ছবি পাঠান।",
+        "resize_ask_photo": "🖼️ যে ছবিটা resize করতে চান, সেটা পাঠান।",
+        "resize_ask_width": "📏 Width কত pixel চান? (১-৫০০০ এর মধ্যে সংখ্যা লিখুন, উদাহরণ: 600)",
+        "resize_ask_height": "📐 Height কত pixel চান? (১-৫০০০ এর মধ্যে সংখ্যা লিখুন, উদাহরণ: 800)",
+        "resize_ask_format": "🗂️ কোন format এ ছবি চান?",
+        "resize_ask_size": "📦 Target size কত KB চান? (সর্বনিম্ন 30 KB, সর্বোচ্চ 2560 KB / 2.5MB)",
+        "resize_invalid_dimension": "❌ সঠিক pixel সংখ্যা লিখুন (১ থেকে ৫০০০ এর মধ্যে)।",
+        "resize_invalid_size": "❌ সঠিক size লিখুন (৩০ KB থেকে ২৫৬০ KB এর মধ্যে)।",
+        "resize_error": "❌ ছবি process করতে সমস্যা হয়েছে: {error}",
+        "resize_note": "🖼️ Size: {w}x{h}px | Format: {fmt} | ফাইল সাইজ: ~{size}KB (target ছিল {target}KB)\n",
         "ask_limit": "📌 এই ফাইলে কী ধরনের limit দিতে চান?",
         "btn_download_limit": "⬇️ Download limit দিন",
         "btn_time_limit": "⏰ Time limit দিন",
@@ -75,12 +90,21 @@ TEXT = {
     "en": {
         "choose_lang": "🌐 Choose your language:",
         "lang_set": "✅ Language set to English!",
-        "welcome_admin": "👋 Welcome Admin!\n\n📁 Send a file — I'll create a link.\n📝 /text <content> — Turn text into a document and get a link.\n🪪 /passport — Resize a photo to passport size and get a link.\n\n📋 /list — All files\n👥 /users — All users\n🟢 /active — Active users (24h)\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User's full activity\n❌ /delete <id> — Delete file\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — See uploader\n🌐 /language — Change language\n❓ /help — Full command list",
-        "welcome_user": "📁 Download files from this bot.\n📝 /text <content> — Turn text into a document and get a link.\n🪪 /passport — Resize a photo to passport size and get a link.\n🌐 /language — Change language",
+        "welcome_admin": "👋 Welcome Admin!\n\n📁 Send a file — I'll create a link.\n📝 /text <content> — Turn text into a document and get a link.\n🪪 /passport — Resize a photo to passport size and get a link.\n🖼️ /resize — Set your own height/width/size/format and get a link.\n\n📋 /list — All files\n👥 /users — All users\n🟢 /active — Active users (24h)\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User's full activity\n❌ /delete <id> — Delete file\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — See uploader\n🌐 /language — Change language\n❓ /help — Full command list",
+        "welcome_user": "📁 Download files from this bot.\n📝 /text <content> — Turn text into a document and get a link.\n🪪 /passport — Resize a photo to passport size and get a link.\n🖼️ /resize — Set your own height/width/size/format and get a link.\n🌐 /language — Change language",
         "text_usage": "📝 Usage: type /text followed by your text.\nExample: /text Paste your long text here...",
         "passport_ask_photo": "🪪 Now send a photo — I'll resize it to passport size (35mm x 45mm).",
         "passport_error": "❌ Couldn't process the photo: {error}",
         "passport_low_res": "⚠️ Your photo's resolution is low, so upscaling it may make it look a bit blurry. Send a higher-resolution photo for better quality.",
+        "resize_ask_photo": "🖼️ Send the photo you want to resize.",
+        "resize_ask_width": "📏 What width in pixels? (1-5000, e.g. 600)",
+        "resize_ask_height": "📐 What height in pixels? (1-5000, e.g. 800)",
+        "resize_ask_format": "🗂️ Which format do you want?",
+        "resize_ask_size": "📦 What target size in KB? (min 30 KB, max 2560 KB / 2.5MB)",
+        "resize_invalid_dimension": "❌ Please enter a valid pixel value (between 1 and 5000).",
+        "resize_invalid_size": "❌ Please enter a valid size (between 30 KB and 2560 KB).",
+        "resize_error": "❌ Couldn't process the photo: {error}",
+        "resize_note": "🖼️ Size: {w}x{h}px | Format: {fmt} | File size: ~{size}KB (target was {target}KB)\n",
         "ask_limit": "📌 What kind of limit do you want for this file?",
         "btn_download_limit": "⬇️ Download Limit",
         "btn_time_limit": "⏰ Time Limit",
@@ -305,6 +329,7 @@ pending_files = {}
 pending_action = {}
 pending_start_uid = {}
 pending_passport = {}
+pending_resize = {}
 
 def is_owner(user_id):
     return user_id == ADMIN_ID
@@ -362,6 +387,63 @@ def make_passport_photo(image_bytes):
     output.seek(0)
     return output, is_upscaled
 
+def resize_format_keyboard():
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton("JPG", callback_data="resizefmt_jpg"))
+    kb.add(InlineKeyboardButton("PNG", callback_data="resizefmt_png"))
+    kb.add(InlineKeyboardButton("WEBP", callback_data="resizefmt_webp"))
+    return kb
+
+def compress_image_to_target(img, fmt, target_bytes):
+    """Resize-compress img to at most target_bytes. Returns a BytesIO buffer."""
+    fmt = fmt.lower()
+    pillow_fmt = {"jpg": "JPEG", "png": "PNG", "webp": "WEBP"}[fmt]
+
+    if pillow_fmt in ("JPEG", "WEBP"):
+        if pillow_fmt == "JPEG" and img.mode in ("RGBA", "P", "LA"):
+            img = img.convert("RGB")
+        low, high = 5, 95
+        best_buf = None
+        while low <= high:
+            mid = (low + high) // 2
+            buf = io.BytesIO()
+            save_kwargs = {"quality": mid}
+            if pillow_fmt == "WEBP":
+                save_kwargs["method"] = 6
+            img.save(buf, format=pillow_fmt, **save_kwargs)
+            if buf.tell() <= target_bytes:
+                best_buf = buf
+                low = mid + 1
+            else:
+                high = mid - 1
+        if best_buf is None:
+            # even the lowest quality exceeds target; use lowest quality anyway
+            best_buf = io.BytesIO()
+            save_kwargs = {"quality": 5}
+            if pillow_fmt == "WEBP":
+                save_kwargs["method"] = 6
+            img.save(best_buf, format=pillow_fmt, **save_kwargs)
+        best_buf.seek(0)
+        return best_buf
+    else:
+        # PNG is lossless; shrink via optimize, then palette quantization if still too big
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGBA")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG", optimize=True)
+        if buf.tell() <= target_bytes:
+            buf.seek(0)
+            return buf
+        for colors in (256, 128, 64, 32, 16, 8):
+            quantized = img.convert("P", palette=Image.ADAPTIVE, colors=colors)
+            buf = io.BytesIO()
+            quantized.save(buf, format="PNG", optimize=True)
+            if buf.tell() <= target_bytes:
+                buf.seek(0)
+                return buf
+        buf.seek(0)
+        return buf  # best effort; may still exceed target for very complex images
+
 # ─── /passport ───
 @bot.message_handler(commands=['passport'])
 def passport_cmd(message):
@@ -391,6 +473,113 @@ def handle_passport_photo(message, user_id):
 
     filename = f"passport_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
     output.name = filename
+    sent = bot.send_document(message.chat.id, output, visible_file_name=filename)
+
+    pending_files[user_id] = {
+        "file_id": sent.document.file_id,
+        "file_name": filename,
+        "file_type": "document"
+    }
+    ask_limit_type(message.chat.id, user_id)
+
+# ─── /resize ───
+@bot.message_handler(commands=['resize'])
+def resize_cmd(message):
+    user_id = message.from_user.id
+    username = message.from_user.username or "no_username"
+    first_name = message.from_user.first_name or ""
+    save_username(user_id, username, first_name)
+
+    if is_blocked(user_id):
+        bot.reply_to(message, t(user_id, "blocked"))
+        return
+
+    pending_resize[user_id] = {}
+    bot.reply_to(message, t(user_id, "resize_ask_photo"))
+
+def start_resize_dimensions(message, user_id):
+    bot.send_message(message.chat.id, t(user_id, "resize_ask_width"))
+    bot.register_next_step_handler(message, got_resize_width, user_id)
+
+def got_resize_width(message, user_id):
+    if user_id not in pending_resize:
+        return
+    try:
+        width = int(message.text.strip())
+        if width < RESIZE_MIN_DIMENSION or width > RESIZE_MAX_DIMENSION:
+            raise ValueError
+    except ValueError:
+        bot.reply_to(message, t(user_id, "resize_invalid_dimension"))
+        bot.register_next_step_handler(message, got_resize_width, user_id)
+        return
+    pending_resize[user_id]["width"] = width
+    bot.send_message(message.chat.id, t(user_id, "resize_ask_height"))
+    bot.register_next_step_handler(message, got_resize_height, user_id)
+
+def got_resize_height(message, user_id):
+    if user_id not in pending_resize:
+        return
+    try:
+        height = int(message.text.strip())
+        if height < RESIZE_MIN_DIMENSION or height > RESIZE_MAX_DIMENSION:
+            raise ValueError
+    except ValueError:
+        bot.reply_to(message, t(user_id, "resize_invalid_dimension"))
+        bot.register_next_step_handler(message, got_resize_height, user_id)
+        return
+    pending_resize[user_id]["height"] = height
+    bot.send_message(message.chat.id, t(user_id, "resize_ask_format"), reply_markup=resize_format_keyboard())
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("resizefmt_"))
+def handle_resize_format(call):
+    user_id = call.from_user.id
+    if user_id not in pending_resize:
+        return
+    fmt = call.data.split("_")[1]
+    pending_resize[user_id]["format"] = fmt
+    bot.edit_message_text(t(user_id, "resize_ask_size"), call.message.chat.id, call.message.message_id)
+    bot.register_next_step_handler(call.message, got_resize_size, user_id)
+
+def got_resize_size(message, user_id):
+    if user_id not in pending_resize:
+        return
+    try:
+        size_kb = float(message.text.strip())
+        if size_kb < RESIZE_MIN_KB or size_kb > RESIZE_MAX_KB:
+            raise ValueError
+    except ValueError:
+        bot.reply_to(message, t(user_id, "resize_invalid_size"))
+        bot.register_next_step_handler(message, got_resize_size, user_id)
+        return
+    pending_resize[user_id]["size_kb"] = size_kb
+    process_resize(message, user_id)
+
+def process_resize(message, user_id):
+    data = pending_resize.pop(user_id, None)
+    if not data or "file_id" not in data:
+        return
+    try:
+        file_info = bot.get_file(data["file_id"])
+        raw_bytes = bot.download_file(file_info.file_path)
+        img = Image.open(io.BytesIO(raw_bytes))
+        img = img.resize((data["width"], data["height"]), Image.LANCZOS)
+        target_bytes = int(data["size_kb"] * 1024)
+        output = compress_image_to_target(img, data["format"], target_bytes)
+    except Exception as e:
+        bot.reply_to(message, t(user_id, "resize_error", error=str(e)))
+        return
+
+    actual_kb = round(len(output.getvalue()) / 1024, 1)
+    ext = data["format"]
+    filename = f"resized_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
+    output.name = filename
+
+    bot.send_message(message.chat.id, t(
+        user_id, "resize_note",
+        w=data["width"], h=data["height"], fmt=ext.upper(),
+        size=actual_kb, target=data["size_kb"]
+    ))
+
     sent = bot.send_document(message.chat.id, output, visible_file_name=filename)
 
     pending_files[user_id] = {
@@ -444,6 +633,7 @@ def help_cmd(message):
             "📖 *সকল Admin Command:*\n\n"
             "📝 /text <লেখা> — লেখাকে .txt ফাইল বানিয়ে download link দেয়\n\n"
             "🪪 /passport — ছবি পাসপোর্ট সাইজে (35x45mm) বানিয়ে download link দেয়\n\n"
+            "🖼️ /resize — নিজের মতো height, width, size (30KB-2.5MB), format (jpg/png/webp) দিয়ে ছবি বানায়\n\n"
             "📋 /list — সব আপলোড করা ফাইলের তালিকা (কে আপলোড করেছে, কতবার ডাউনলোড হয়েছে)\n\n"
             "👥 /users — সব user এর তালিকা (কে কবে join করেছে, last active কবে)\n\n"
             "🟢 /active — গত ২৪ ঘণ্টায় যারা bot ব্যবহার করেছে শুধু তাদের তালিকা\n\n"
@@ -461,6 +651,7 @@ def help_cmd(message):
             "📖 *All Admin Commands:*\n\n"
             "📝 /text <content> — Turn text into a .txt file and get a download link\n\n"
             "🪪 /passport — Resize a photo to passport size (35x45mm) and get a download link\n\n"
+            "🖼️ /resize — Set your own height, width, size (30KB-2.5MB), format (jpg/png/webp)\n\n"
             "📋 /list — List of all uploaded files (who uploaded, download count)\n\n"
             "👥 /users — List of all users (join date, last active)\n\n"
             "🟢 /active — Only users active in the last 24 hours\n\n"
@@ -789,6 +980,11 @@ def receive_file(message):
 
     if message.photo and pending_passport.pop(user_id, None):
         handle_passport_photo(message, user_id)
+        return
+
+    if message.photo and user_id in pending_resize and "file_id" not in pending_resize[user_id]:
+        pending_resize[user_id]["file_id"] = message.photo[-1].file_id
+        start_resize_dimensions(message, user_id)
         return
 
     if not is_admin(user_id):
