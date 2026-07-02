@@ -1,4 +1,5 @@
 import os
+import io
 import telebot
 import uuid
 import sqlite3
@@ -23,8 +24,9 @@ TEXT = {
     "bn": {
         "choose_lang": "🌐 আপনার ভাষা সিলেক্ট করুন:",
         "lang_set": "✅ ভাষা বাংলা সেট করা হয়েছে!",
-        "welcome_admin": "👋 স্বাগতম Admin!\n\n📁 ফাইল পাঠান — link বানিয়ে দেব।\n\n📋 /list — সব ফাইল\n👥 /users — সব user দেখুন\n🟢 /active — ২৪ ঘণ্টায় active user\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User এর সব activity\n❌ /delete <id> — ফাইল মুছুন\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — কে আপলোড করেছে\n🌐 /language — ভাষা পরিবর্তন\n❓ /help — সব command এর তালিকা",
-        "welcome_user": "📁 এই bot থেকে ফাইল ডাউনলোড করুন।\n🌐 /language — ভাষা পরিবর্তন করুন",
+        "welcome_admin": "👋 স্বাগতম Admin!\n\n📁 ফাইল পাঠান — link বানিয়ে দেব।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n\n📋 /list — সব ফাইল\n👥 /users — সব user দেখুন\n🟢 /active — ২৪ ঘণ্টায় active user\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User এর সব activity\n❌ /delete <id> — ফাইল মুছুন\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — কে আপলোড করেছে\n🌐 /language — ভাষা পরিবর্তন\n❓ /help — সব command এর তালিকা",
+        "welcome_user": "📁 এই bot থেকে ফাইল ডাউনলোড করুন।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n🌐 /language — ভাষা পরিবর্তন করুন",
+        "text_usage": "📝 ব্যবহার: /text এর পর আপনার লেখা লিখুন।\nউদাহরণ: /text এখানে আপনার বড় লেখাটি লিখুন...",
         "ask_limit": "📌 এই ফাইলে কী ধরনের limit দিতে চান?",
         "btn_download_limit": "⬇️ Download limit দিন",
         "btn_time_limit": "⏰ Time limit দিন",
@@ -66,8 +68,9 @@ TEXT = {
     "en": {
         "choose_lang": "🌐 Choose your language:",
         "lang_set": "✅ Language set to English!",
-        "welcome_admin": "👋 Welcome Admin!\n\n📁 Send a file — I'll create a link.\n\n📋 /list — All files\n👥 /users — All users\n🟢 /active — Active users (24h)\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User's full activity\n❌ /delete <id> — Delete file\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — See uploader\n🌐 /language — Change language\n❓ /help — Full command list",
-        "welcome_user": "📁 Download files from this bot.\n🌐 /language — Change language",
+        "welcome_admin": "👋 Welcome Admin!\n\n📁 Send a file — I'll create a link.\n📝 /text <content> — Turn text into a document and get a link.\n\n📋 /list — All files\n👥 /users — All users\n🟢 /active — Active users (24h)\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User's full activity\n❌ /delete <id> — Delete file\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — See uploader\n🌐 /language — Change language\n❓ /help — Full command list",
+        "welcome_user": "📁 Download files from this bot.\n📝 /text <content> — Turn text into a document and get a link.\n🌐 /language — Change language",
+        "text_usage": "📝 Usage: type /text followed by your text.\nExample: /text Paste your long text here...",
         "ask_limit": "📌 What kind of limit do you want for this file?",
         "btn_download_limit": "⬇️ Download Limit",
         "btn_time_limit": "⏰ Time Limit",
@@ -311,6 +314,14 @@ def time_unit_keyboard(user_id):
     kb.add(InlineKeyboardButton(t(user_id, "btn_hours"), callback_data="timeunit_hours"))
     return kb
 
+def ask_limit_type(chat_id, user_id):
+    keyboard = InlineKeyboardMarkup()
+    keyboard.add(InlineKeyboardButton(t(user_id, "btn_download_limit"), callback_data="limit_download"))
+    keyboard.add(InlineKeyboardButton(t(user_id, "btn_time_limit"), callback_data="limit_time"))
+    keyboard.add(InlineKeyboardButton(t(user_id, "btn_both"), callback_data="limit_both"))
+    keyboard.add(InlineKeyboardButton(t(user_id, "btn_none"), callback_data="limit_none"))
+    bot.send_message(chat_id, t(user_id, "ask_limit"), reply_markup=keyboard)
+
 # ─── /start ───
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -353,6 +364,7 @@ def help_cmd(message):
     if lang == "bn":
         text = (
             "📖 *সকল Admin Command:*\n\n"
+            "📝 /text <লেখা> — লেখাকে .txt ফাইল বানিয়ে download link দেয়\n\n"
             "📋 /list — সব আপলোড করা ফাইলের তালিকা (কে আপলোড করেছে, কতবার ডাউনলোড হয়েছে)\n\n"
             "👥 /users — সব user এর তালিকা (কে কবে join করেছে, last active কবে)\n\n"
             "🟢 /active — গত ২৪ ঘণ্টায় যারা bot ব্যবহার করেছে শুধু তাদের তালিকা\n\n"
@@ -368,6 +380,7 @@ def help_cmd(message):
     else:
         text = (
             "📖 *All Admin Commands:*\n\n"
+            "📝 /text <content> — Turn text into a .txt file and get a download link\n\n"
             "📋 /list — List of all uploaded files (who uploaded, download count)\n\n"
             "👥 /users — List of all users (join date, last active)\n\n"
             "🟢 /active — Only users active in the last 24 hours\n\n"
@@ -722,12 +735,44 @@ def receive_file(message):
             "file_type": "audio"
         }
 
-    keyboard = InlineKeyboardMarkup()
-    keyboard.add(InlineKeyboardButton(t(user_id, "btn_download_limit"), callback_data="limit_download"))
-    keyboard.add(InlineKeyboardButton(t(user_id, "btn_time_limit"), callback_data="limit_time"))
-    keyboard.add(InlineKeyboardButton(t(user_id, "btn_both"), callback_data="limit_both"))
-    keyboard.add(InlineKeyboardButton(t(user_id, "btn_none"), callback_data="limit_none"))
-    bot.reply_to(message, t(user_id, "ask_limit"), reply_markup=keyboard)
+    ask_limit_type(message.chat.id, user_id)
+
+# ─── /text (text-to-document) ───
+@bot.message_handler(commands=['text'])
+def text_cmd(message):
+    user_id = message.from_user.id
+    username = message.from_user.username or "no_username"
+    first_name = message.from_user.first_name or ""
+    save_username(user_id, username, first_name)
+
+    if is_blocked(user_id):
+        bot.reply_to(message, t(user_id, "blocked"))
+        return
+
+    if not is_admin(user_id):
+        return
+
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2 or not parts[1].strip():
+        bot.reply_to(message, t(user_id, "text_usage"))
+        return
+
+    content = parts[1]
+    filename = f"text_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+
+    file_bytes = io.BytesIO(content.encode("utf-8"))
+    file_bytes.name = filename
+
+    # Send once so Telegram assigns a file_id we can reuse for downloads
+    sent = bot.send_document(message.chat.id, file_bytes, visible_file_name=filename)
+
+    pending_files[user_id] = {
+        "file_id": sent.document.file_id,
+        "file_name": filename,
+        "file_type": "document"
+    }
+
+    ask_limit_type(message.chat.id, user_id)
 
 # ─── Limit type callback ───
 @bot.callback_query_handler(func=lambda call: call.data.startswith("limit_"))
