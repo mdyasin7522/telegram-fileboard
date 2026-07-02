@@ -6,6 +6,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from PIL import Image
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -17,6 +18,9 @@ MAX_MINUTES = 2880   # 48 hours
 MAX_TIME_VALUE_MIN = 700
 MAX_TIME_VALUE_HOUR = 48
 
+# Bangladesh standard passport photo: 35mm x 45mm @ 300 dpi
+PASSPORT_SIZE = (413, 531)
+
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # ─── Translations ───
@@ -24,9 +28,12 @@ TEXT = {
     "bn": {
         "choose_lang": "🌐 আপনার ভাষা সিলেক্ট করুন:",
         "lang_set": "✅ ভাষা বাংলা সেট করা হয়েছে!",
-        "welcome_admin": "👋 স্বাগতম Admin!\n\n📁 ফাইল পাঠান — link বানিয়ে দেব।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n\n📋 /list — সব ফাইল\n👥 /users — সব user দেখুন\n🟢 /active — ২৪ ঘণ্টায় active user\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User এর সব activity\n❌ /delete <id> — ফাইল মুছুন\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — কে আপলোড করেছে\n🌐 /language — ভাষা পরিবর্তন\n❓ /help — সব command এর তালিকা",
-        "welcome_user": "📁 এই bot থেকে ফাইল ডাউনলোড করুন।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n🌐 /language — ভাষা পরিবর্তন করুন",
+        "welcome_admin": "👋 স্বাগতম Admin!\n\n📁 ফাইল পাঠান — link বানিয়ে দেব।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n🪪 /passport — ছবি পাসপোর্ট সাইজে বানিয়ে link দেব।\n\n📋 /list — সব ফাইল\n👥 /users — সব user দেখুন\n🟢 /active — ২৪ ঘণ্টায় active user\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User এর সব activity\n❌ /delete <id> — ফাইল মুছুন\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — কে আপলোড করেছে\n🌐 /language — ভাষা পরিবর্তন\n❓ /help — সব command এর তালিকা",
+        "welcome_user": "📁 এই bot থেকে ফাইল ডাউনলোড করুন।\n📝 /text <লেখা> — লেখাকে text document বানিয়ে link দেব।\n🪪 /passport — ছবি পাসপোর্ট সাইজে বানিয়ে link দেব।\n🌐 /language — ভাষা পরিবর্তন করুন",
         "text_usage": "📝 ব্যবহার: /text এর পর আপনার লেখা লিখুন।\nউদাহরণ: /text এখানে আপনার বড় লেখাটি লিখুন...",
+        "passport_ask_photo": "🪪 এখন একটা ছবি পাঠান — আমি সেটাকে পাসপোর্ট সাইজে (35mm x 45mm) বানিয়ে দেব।",
+        "passport_error": "❌ ছবি process করতে সমস্যা হয়েছে: {error}",
+        "passport_low_res": "⚠️ আপনার ছবির resolution কম, তাই বড় করার (upscale) কারণে ছবিটা কিছুটা ঘোলা/blur দেখাতে পারে। ভালো মানের জন্য বেশি resolution এর ছবি পাঠান।",
         "ask_limit": "📌 এই ফাইলে কী ধরনের limit দিতে চান?",
         "btn_download_limit": "⬇️ Download limit দিন",
         "btn_time_limit": "⏰ Time limit দিন",
@@ -68,9 +75,12 @@ TEXT = {
     "en": {
         "choose_lang": "🌐 Choose your language:",
         "lang_set": "✅ Language set to English!",
-        "welcome_admin": "👋 Welcome Admin!\n\n📁 Send a file — I'll create a link.\n📝 /text <content> — Turn text into a document and get a link.\n\n📋 /list — All files\n👥 /users — All users\n🟢 /active — Active users (24h)\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User's full activity\n❌ /delete <id> — Delete file\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — See uploader\n🌐 /language — Change language\n❓ /help — Full command list",
-        "welcome_user": "📁 Download files from this bot.\n📝 /text <content> — Turn text into a document and get a link.\n🌐 /language — Change language",
+        "welcome_admin": "👋 Welcome Admin!\n\n📁 Send a file — I'll create a link.\n📝 /text <content> — Turn text into a document and get a link.\n🪪 /passport — Resize a photo to passport size and get a link.\n\n📋 /list — All files\n👥 /users — All users\n🟢 /active — Active users (24h)\n📊 /stats — Bot statistics\n🔍 /userinfo <id> — User's full activity\n❌ /delete <id> — Delete file\n🚫 /block <id> — Block\n✅ /unblock <id> — Unblock\n🔎 /uploader <file_id> — See uploader\n🌐 /language — Change language\n❓ /help — Full command list",
+        "welcome_user": "📁 Download files from this bot.\n📝 /text <content> — Turn text into a document and get a link.\n🪪 /passport — Resize a photo to passport size and get a link.\n🌐 /language — Change language",
         "text_usage": "📝 Usage: type /text followed by your text.\nExample: /text Paste your long text here...",
+        "passport_ask_photo": "🪪 Now send a photo — I'll resize it to passport size (35mm x 45mm).",
+        "passport_error": "❌ Couldn't process the photo: {error}",
+        "passport_low_res": "⚠️ Your photo's resolution is low, so upscaling it may make it look a bit blurry. Send a higher-resolution photo for better quality.",
         "ask_limit": "📌 What kind of limit do you want for this file?",
         "btn_download_limit": "⬇️ Download Limit",
         "btn_time_limit": "⏰ Time Limit",
@@ -294,6 +304,7 @@ def get_user_activity(user_id):
 pending_files = {}
 pending_action = {}
 pending_start_uid = {}
+pending_passport = {}
 
 def is_owner(user_id):
     return user_id == ADMIN_ID
@@ -321,6 +332,73 @@ def ask_limit_type(chat_id, user_id):
     keyboard.add(InlineKeyboardButton(t(user_id, "btn_both"), callback_data="limit_both"))
     keyboard.add(InlineKeyboardButton(t(user_id, "btn_none"), callback_data="limit_none"))
     bot.send_message(chat_id, t(user_id, "ask_limit"), reply_markup=keyboard)
+
+def make_passport_photo(image_bytes):
+    img = Image.open(io.BytesIO(image_bytes))
+    img = img.convert("RGB")
+    target_w, target_h = PASSPORT_SIZE
+    target_ratio = target_w / target_h
+    w, h = img.size
+    current_ratio = w / h
+
+    if current_ratio > target_ratio:
+        # image is relatively wider than target -> crop sides
+        new_w = int(h * target_ratio)
+        left = (w - new_w) // 2
+        img = img.crop((left, 0, left + new_w, h))
+    else:
+        # image is relatively taller than target -> crop top/bottom
+        new_h = int(w / target_ratio)
+        top = (h - new_h) // 2
+        img = img.crop((0, top, w, top + new_h))
+
+    # after cropping to the right aspect ratio, check if we'd be upscaling
+    cropped_w, cropped_h = img.size
+    is_upscaled = cropped_w < target_w or cropped_h < target_h
+
+    img = img.resize(PASSPORT_SIZE, Image.LANCZOS)
+    output = io.BytesIO()
+    img.save(output, format="JPEG", quality=95)
+    output.seek(0)
+    return output, is_upscaled
+
+# ─── /passport ───
+@bot.message_handler(commands=['passport'])
+def passport_cmd(message):
+    user_id = message.from_user.id
+    username = message.from_user.username or "no_username"
+    first_name = message.from_user.first_name or ""
+    save_username(user_id, username, first_name)
+
+    if is_blocked(user_id):
+        bot.reply_to(message, t(user_id, "blocked"))
+        return
+
+    pending_passport[user_id] = True
+    bot.reply_to(message, t(user_id, "passport_ask_photo"))
+
+def handle_passport_photo(message, user_id):
+    try:
+        file_info = bot.get_file(message.photo[-1].file_id)
+        raw_bytes = bot.download_file(file_info.file_path)
+        output, is_upscaled = make_passport_photo(raw_bytes)
+    except Exception as e:
+        bot.reply_to(message, t(user_id, "passport_error", error=str(e)))
+        return
+
+    if is_upscaled:
+        bot.send_message(message.chat.id, t(user_id, "passport_low_res"))
+
+    filename = f"passport_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+    output.name = filename
+    sent = bot.send_document(message.chat.id, output, visible_file_name=filename)
+
+    pending_files[user_id] = {
+        "file_id": sent.document.file_id,
+        "file_name": filename,
+        "file_type": "document"
+    }
+    ask_limit_type(message.chat.id, user_id)
 
 # ─── /start ───
 @bot.message_handler(commands=['start'])
@@ -365,6 +443,7 @@ def help_cmd(message):
         text = (
             "📖 *সকল Admin Command:*\n\n"
             "📝 /text <লেখা> — লেখাকে .txt ফাইল বানিয়ে download link দেয়\n\n"
+            "🪪 /passport — ছবি পাসপোর্ট সাইজে (35x45mm) বানিয়ে download link দেয়\n\n"
             "📋 /list — সব আপলোড করা ফাইলের তালিকা (কে আপলোড করেছে, কতবার ডাউনলোড হয়েছে)\n\n"
             "👥 /users — সব user এর তালিকা (কে কবে join করেছে, last active কবে)\n\n"
             "🟢 /active — গত ২৪ ঘণ্টায় যারা bot ব্যবহার করেছে শুধু তাদের তালিকা\n\n"
@@ -381,6 +460,7 @@ def help_cmd(message):
         text = (
             "📖 *All Admin Commands:*\n\n"
             "📝 /text <content> — Turn text into a .txt file and get a download link\n\n"
+            "🪪 /passport — Resize a photo to passport size (35x45mm) and get a download link\n\n"
             "📋 /list — List of all uploaded files (who uploaded, download count)\n\n"
             "👥 /users — List of all users (join date, last active)\n\n"
             "🟢 /active — Only users active in the last 24 hours\n\n"
@@ -705,6 +785,10 @@ def receive_file(message):
 
     if is_blocked(user_id):
         bot.reply_to(message, t(user_id, "blocked"))
+        return
+
+    if message.photo and pending_passport.pop(user_id, None):
+        handle_passport_photo(message, user_id)
         return
 
     if not is_admin(user_id):
